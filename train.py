@@ -33,38 +33,12 @@ from sklearn.model_selection import train_test_split, KFold
 from options import draw_process, losses
 from config import parse_args, parse_yacs
 from config.const import TMP_RESULTS_DIR, DATA_PATH, CSV_PATH
+from data.get_dataloader import train_dataloader, val_dataloader
 
 from VGG16_GAP import model
-# from VGG16_GAP_M2_C32 import model
+# from VGG16_GAP_M2_C32 import model        
 
-class ImageDataset(Dataset):
-    def __init__(self, files, csv_file, transform):
-        self.files = files
-        self.csv = csv_file
-        self.transform = transform
-        self.as_tensor = transforms.Compose([
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.5], std=[0.5]),
-        ])
 
-    def __len__(self):
-        return len(self.files)
-
-    def __getitem__(self, idx):
-        img_file = self.files[idx]
-        data = self.csv
-        img = cv2.imread(img_file, 0)
-        perf = np.nanmedian(data[data['name']==os.path.basename(img_file)[:10]]['Resist']).astype(np.float32)
-
-        if 'T' in os.path.basename(img_file):
-            img = ((img - 138.8) * 0.6 + 142.7).astype('uint8')
-        
-        augments = self.transform(image=img)
-        
-        img = self.as_tensor(augments['image'])
-        
-        return os.path.basename(img_file), img, perf
-        
 def adjust_learning_rate(optimizer, lr):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
@@ -163,21 +137,7 @@ def main():
     
     # データの読み込み
     files = glob.glob(DATA_PATH)
-
     csv_file = pd.read_csv(CSV_PATH)
-    
-    # Augmentation&Tensor化の設定
-    train_transform = album.Compose([
-        
-        album.VerticalFlip(p=0.5),
-        album.Rotate(limit=[-10, 10]),
-        album.CenterCrop(height=512, width=256),
-        album.RandomCrop(height=224, width=224),
-    ])
-
-    val_transform = album.Compose([
-        album.CenterCrop(height=224, width=224),
-    ])
 
     # 交差検証(cross validation)
     kf = KFold(n_splits=args.TRAIN.KFOLD, shuffle=True, random_state=2020)
@@ -202,19 +162,11 @@ def main():
                 os.makedirs(dir_path)
 
             # データの読み込み
-            train_data = ImageDataset(files=train_files, csv_file=csv_file, transform=train_transform)
-            train_loader = torch.utils.data.DataLoader(train_data,
-                                                      batch_size=args.TRAIN.BATCH_SIZE,
-                                                      shuffle=True,
-                                                      num_workers=4)    
-            val_data = ImageDataset(files=val_files, csv_file=csv_file, transform=val_transform)
-            val_loader = torch.utils.data.DataLoader(val_data,
-                                                      batch_size=args.TRAIN.BATCH_SIZE,
-                                                      shuffle=False,
-                                                      num_workers=4)
+            train_loader = train_dataloader(files=train_files, csv_file=csv_file)
+            val_loader = val_dataloader(files=val_files, csv_file=csv_file)
 
-            N_train = len(train_data)
-            N_val = len(val_data)
+            N_train = len(train_loader)
+            N_val = len(val_loader)
 
             # ネットワークの読み込み
             net = model(n_channels=1, n_classes=1)
