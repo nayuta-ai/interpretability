@@ -1,5 +1,6 @@
 # custom ignores
 result
+data/dataset/rubber_data_2021
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
