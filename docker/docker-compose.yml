@@ -1,0 +1,12 @@
+version: '3'
+services:
+  python:
+    build: ./docker
+    container_name: egg
+    ports:
+      - 80:8888
+    tty: true
+    volumes:
+      - type: bind
+        source: "."
+        target: "/workspace"
