@@ -4,39 +4,27 @@ import pandas as pd
 import torch
 from torch.utils.data import DataLoader
 
-from config import parse_yacs
 from data.get_dataset import ImageDataset
 from data.transform import train_transform, val_transform
 
 
-def train_dataloader(files: List[str], csv_file: pd.DataFrame) -> DataLoader:
-    """ A function for train dataloader
+def get_dataloader(
+        dataset: List[str], csv_file: pd.DataFrame, batch_size: int,
+        type_dataset: str) -> DataLoader:
+    """ A function to load data
     Args:
-        files(List[str]): original dataset
-        csv_file(pd.DataFrame): file including the detail of original dataset
-    Returns:
-        DataLoader: train dataloader
+        dataset (List[str]): original dataset
+        csv_file (pd.DataFrame): file contained the detail of original dataset
+        batch_size (int): the size of batch
+        type_dataset (str): the type of dataset such as train, val, and test
     """
-    args = parse_yacs()
-    data = ImageDataset(files=files, csv_file=csv_file, transform=train_transform())
-    return torch.utils.data.DataLoader(
-       data,
-       batch_size=args.TRAIN.BATCH_SIZE,
-       shuffle=True,
-       num_workers=4)
-
-def val_dataloader(files: List[str], csv_file: pd.DataFrame) -> DataLoader:
-    """ A function for val dataloader
-    Args:
-        files(List[str]): original dataset
-        csv_file(pd.DataFrame): file including the detail of original dataset
-    Returns:
-        DataLoader: val dataloader
-    """
-    args = parse_yacs()
-    data = ImageDataset(files=files, csv_file=csv_file, transform=val_transform())
-    return torch.utils.data.DataLoader(
-        data,
-        batch_size=args.TRAIN.BATCH_SIZE,
-        shuffle=False,
-        num_workers=4)
+    if type_dataset == "train":
+        data = ImageDataset(
+            dataset=dataset, csv_file=csv_file, transform=train_transform())
+        return torch.utils.data.DataLoader(
+            data, batch_size=batch_size, shuffle=True, num_workers=4)
+    elif type_dataset == "val":
+        data = ImageDataset(
+            dataset=dataset, csv_file=csv_file, transform=val_transform())
+        return torch.utils.data.DataLoader(
+            data, batch_size=batch_size, shuffle=False, num_workers=4)

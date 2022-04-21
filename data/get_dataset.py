@@ -1,24 +1,26 @@
 import os
+from typing import List
 
 import albumentations as album
+import cv2
 import numpy as np
 import pandas as pd
-import cv2
 import torch
-from typing import List
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset
 from torchvision import transforms
 
 
 class ImageDataset(Dataset):
-    def __init__(self, files: List[str], csv_file: pd.DataFrame, transform: album.Compose) -> None:
+    def __init__(
+            self, dataset: List[str], csv_file: pd.DataFrame,
+            transform: album.Compose) -> None:
         """ Initialization
         Args:
-            files(List[str]): original dataset
-            csv_file(pd.DataFrame): file including the detail of original dataset
-            transform(album.Compose): the procedure of the data augmentation
+            dataset (List[str]): original dataset
+            csv_file (pd.DataFrame): file contained the detail of the dataset
+            transform (album.Compose): the procedure of the data augmentation
         """
-        self.files = files
+        self.dataset = dataset
         self.csv = csv_file
         self.transform = transform
         self.as_tensor = transforms.Compose([
@@ -27,14 +29,14 @@ class ImageDataset(Dataset):
         ])
 
     def __len__(self) -> int:
-        """ Function for counting the number of data
+        """ Function to count the number of data
         Returns:
             int: the number of files
         """
-        return len(self.files)
+        return len(self.dataset)
 
     def __getitem__(self, idx: int) -> (str, torch.Tensor, np.float32):
-        """ Function for getting item
+        """ Function to get item
         Args:
             idx(int): the index of files
         Returns:
@@ -42,14 +44,21 @@ class ImageDataset(Dataset):
             torch.Tensor: the image data formatted Tensor
             np.float32: the median of data
         """
-        img_file = self.files[idx]
+        img_data = self.dataset[idx]
         data = self.csv
-        img = cv2.imread(img_file, 0)
-        perf = np.nanmedian(data[data['name']==os.path.basename(img_file)[:10]]['Resist']).astype(np.float32)
+        img = cv2.imread(img_data, 0)
+        img_data_path = os.path.basename(img_data)
+        perf = np.nanmedian(
+            data[data['name'] == img_data_path[:10]]['Resist']
+            ).astype(np.float32)
 
-        if 'T' in os.path.basename(img_file):
+        # There are two types: "STEM," which is just an ordinary SEM image,
+        # and "STEM-EDX," which contains information on the distribution of
+        # each of the nine elements.
+        # "STEM-EDX" data has a "T" in the file name.
+        if 'T' in img_data_path:
             img = ((img - 138.8) * 0.6 + 142.7).astype('uint8')
-        
+
         augments = self.transform(image=img)
         img = self.as_tensor(augments['image'])
-        return os.path.basename(img_file), img, perf
+        return img_data_path, img, perf

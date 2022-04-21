@@ -33,10 +33,9 @@ from sklearn.model_selection import train_test_split, KFold
 from options import draw_process, losses
 from config import parse_args, parse_yacs
 from config.const import TMP_RESULTS_DIR, DATA_PATH, CSV_PATH
-from data.get_dataloader import train_dataloader, val_dataloader
+from data.get_dataloader import get_dataloader
 
-from VGG16_GAP import model
-# from VGG16_GAP_M2_C32 import model        
+from VGG16_GAP import model   
 
 
 def adjust_learning_rate(optimizer, lr):
@@ -162,8 +161,11 @@ def main():
                 os.makedirs(dir_path)
 
             # データの読み込み
-            train_loader = train_dataloader(files=train_files, csv_file=csv_file)
-            val_loader = val_dataloader(files=val_files, csv_file=csv_file)
+            train_loader = get_dataloader(
+                dataset=train_files, csv_file=csv_file, batch_size=args.TRAIN.BATCH_SIZE, 
+                type_dataset="train")
+            val_loader = get_dataloader(dataset=val_files, csv_file=csv_file, batch_size=args.TRAIN.BATCH_SIZE, 
+                type_dataset="val")
 
             N_train = len(train_loader)
             N_val = len(val_loader)
