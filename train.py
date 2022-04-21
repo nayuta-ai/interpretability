@@ -1,46 +1,36 @@
-import sys
 import os
 from os.path import join
 import glob
 import inspect
-import random
-import shutil
 from distutils.dir_util import copy_tree
 import time
 import datetime
-import argparse
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
 from collections import OrderedDict
-from operator import itemgetter
-import cv2
 
 import torch
 import torch.backends.cudnn as cudnn
 import torch.nn as nn
 from torch import optim
-from torch.utils.data import Dataset, DataLoader
-from torchvision import datasets, models, transforms
-from torchvision.transforms import functional as tvf
-from torch.nn import functional as F
 
-import albumentations as album
 
 from sklearn.metrics import r2_score
-from sklearn.model_selection import train_test_split, KFold
+from sklearn.model_selection import KFold
 
-from options import draw_process, losses
+from options import draw_process
 from config import parse_args, parse_yacs
-from config.const import TMP_RESULTS_DIR, DATA_PATH, CSV_PATH
+from config.const import PROJECT_ROOT, DATA_PATH, CSV_PATH
 from data.get_dataloader import get_dataloader
 
-from VGG16_GAP import model   
+from VGG16_GAP import model
 
 
 def adjust_learning_rate(optimizer, lr):
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
+
 
 class AverageMeter(object):
     def __init__(self):
@@ -57,6 +47,7 @@ class AverageMeter(object):
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
+
 
 def train(args, train_loader, net, criterion, optimizer, epoch):
     pred_losses = AverageMeter()
@@ -95,6 +86,7 @@ def train(args, train_loader, net, criterion, optimizer, epoch):
     log = OrderedDict([('loss', losses.avg), ('r2', r2), ('file_name', name_lst), ('perf', perf_lst), ('pred', pred_lst)])
     return log
 
+
 def val(args, val_loader, net, criterion, epoch):
     pred_losses = AverageMeter()
     div_losses = AverageMeter()
@@ -125,30 +117,37 @@ def val(args, val_loader, net, criterion, epoch):
     log = OrderedDict([('loss', losses.avg), ('r2', r2), ('file_name', name_lst), ('perf', perf_lst), ('pred', pred_lst)])
     return log
 
+
 def main():
     # 学習のオプションを読み込み
-    option = parse_args()
+    # option = parse_args()
     args = parse_yacs()
-    
+
+    now = str(datetime.datetime.now())
+    result_dir = join(PROJECT_ROOT, "result", now)
+    # arg_file = join(result_dir, "args.yaml")
+    # log_file = join(result_dir, "log.txt")
+
     # モデルのコピー
     model_path = os.path.dirname(inspect.getmodule(model).__file__)
-    copy_tree(model_path, join(TMP_RESULTS_DIR, f'{os.path.basename(model_path)}'))
-    
+    copy_tree(model_path, join(result_dir, f'{os.path.basename(model_path)}'))
+
     # データの読み込み
     files = glob.glob(DATA_PATH)
     csv_file = pd.read_csv(CSV_PATH)
 
     # 交差検証(cross validation)
     kf = KFold(n_splits=args.TRAIN.KFOLD, shuffle=True, random_state=2020)
-    
+
     for k, (train_index, val_index) in enumerate(kf.split(files)):
         # 交差検証用のフォルダ作成
-        KFOLD_FOLDER = join(TMP_RESULTS_DIR, "kfold", f"k_{k+1}")
-        if not os.path.exists(KFOLD_FOLDER):
-            os.makedirs(KFOLD_FOLDER)
+        kfold_folder = join(result_dir, "kfold", f"k_{k+1}")
+        if not os.path.exists(kfold_folder):
+            os.makedirs(kfold_folder)
 
-        train_files, val_files = np.array(files)[train_index].tolist(), np.array(files)[val_index].tolist()
-        
+        train_files = np.array(files)[train_index].tolist()
+        val_files = np.array(files)[val_index].tolist()
+
         train_files = train_files * 32
 
         # 元素ごとに解析
@@ -156,16 +155,17 @@ def main():
 
         for genso in genso_lst:
             # 計算結果用のフォルダ作成2
-            dir_path = join(KFOLD_FOLDER, f"{genso}")
+            dir_path = join(kfold_folder, f"{genso}")
             if not os.path.exists(dir_path):
                 os.makedirs(dir_path)
 
             # データの読み込み
             train_loader = get_dataloader(
-                dataset=train_files, csv_file=csv_file, batch_size=args.TRAIN.BATCH_SIZE, 
-                type_dataset="train")
-            val_loader = get_dataloader(dataset=val_files, csv_file=csv_file, batch_size=args.TRAIN.BATCH_SIZE, 
-                type_dataset="val")
+                dataset=train_files, csv_file=csv_file,
+                batch_size=args.TRAIN.BATCH_SIZE, type_dataset="train")
+            val_loader = get_dataloader(
+                dataset=val_files, csv_file=csv_file,
+                batch_size=args.TRAIN.BATCH_SIZE, type_dataset="val")
 
             N_train = len(train_loader)
             N_val = len(val_loader)
