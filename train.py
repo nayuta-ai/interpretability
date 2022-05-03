@@ -24,7 +24,7 @@ from config import parse_args, parse_yacs
 from config.const import PROJECT_ROOT, DATA_PATH, CSV_PATH
 from data.get_dataloader import get_dataloader
 
-from VGG16_GAP import model
+from models.vgg16_gap import VGG16
 
 
 def adjust_learning_rate(optimizer, lr):
@@ -59,7 +59,9 @@ def train(args, train_loader, net, criterion, optimizer, epoch):
     net.train()
     with tqdm(enumerate(train_loader), total= len(train_loader)) as pbar:
         for batch_num, (file_name, img, perf) in pbar:
-            
+            print(img.size())
+            a = torch.randn(1,1,224,224)
+            print(a.size())
             img = img.cuda()
             perf = perf.cuda()
 
@@ -128,10 +130,6 @@ def main():
     # arg_file = join(result_dir, "args.yaml")
     # log_file = join(result_dir, "log.txt")
 
-    # モデルのコピー
-    model_path = os.path.dirname(inspect.getmodule(model).__file__)
-    copy_tree(model_path, join(result_dir, f'{os.path.basename(model_path)}'))
-
     # データの読み込み
     files = glob.glob(DATA_PATH)
     csv_file = pd.read_csv(CSV_PATH)
@@ -140,7 +138,7 @@ def main():
     kf = KFold(n_splits=args.TRAIN.KFOLD, shuffle=True, random_state=2020)
 
     for k, (train_index, val_index) in enumerate(kf.split(files)):
-        # 交差検証用のフォルダ作成
+        # 交差検証用のフォルダ作成(remove)
         kfold_folder = join(result_dir, "kfold", f"k_{k+1}")
         if not os.path.exists(kfold_folder):
             os.makedirs(kfold_folder)
@@ -150,11 +148,11 @@ def main():
 
         train_files = train_files * 32
 
-        # 元素ごとに解析
+        # 元素ごとに解析 (remove)
         genso_lst = ['normal']
 
         for genso in genso_lst:
-            # 計算結果用のフォルダ作成2
+            # 計算結果用のフォルダ作成2 (remove)
             dir_path = join(kfold_folder, f"{genso}")
             if not os.path.exists(dir_path):
                 os.makedirs(dir_path)
@@ -171,10 +169,10 @@ def main():
             N_val = len(val_loader)
 
             # ネットワークの読み込み
-            net = model(n_channels=1, n_classes=1)
+            net = VGG16(n_channels=1, n_classes=1)
             net = torch.nn.DataParallel(net).cuda()
 
-            # モデルの読み込み
+            # モデルの読み込み (remove)
             """
             if not args.TRAIN.MODEL_TYPE == 'None':
                 net.load_state_dict(torch.load(args.TRAIN.MODEL_TYPE))

@@ -103,6 +103,9 @@ def test_get_dataloader(batch_size: int, type_dataset: str):
                 assert type(samples[1][0]) == torch.Tensor, \
                     f"The type of samples should be Tensor, \
                     but {type(samples[1][0])}"
+                assert len(samples[1][0]) == 1, \
+                    f"The size of samples should be 1, \
+                    but {len(samples[1][0])}"
                 assert len(samples[1][0][0]) == 224, \
                     f"The row of samples should be 224, \
                     but {len(samples[1][0][0])}"
@@ -113,3 +116,6 @@ def test_get_dataloader(batch_size: int, type_dataset: str):
                 assert type(samples[2][0]) == torch.Tensor, \
                     f"The type of sample should be Tensor, \
                     but {type(samples[2][0])}"
+                assert len(samples[2]) == 1, \
+                    f"The length of sample should be 1, \
+                    but {len(samples[2])}"
