@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from models.vgg16_gap import *
+from models.vgg16_gap import VGG16, classifier, conv_layer, features
 
 
 def test_vgg16():

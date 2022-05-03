@@ -1,11 +1,11 @@
 import torch
-from torch import nn, einsum
-import torch.nn.functional as F
+from torch import nn
 
 
 class VGG16(nn.Module):
 
-    def __init__(self, n_channels: int = 1, ch_num: int = 512, n_classes: int = 1):
+    def __init__(
+            self, n_channels: int = 1, ch_num: int = 512, n_classes: int = 1):
         """
         Args:
             n_channels (int): number of input channel
@@ -14,8 +14,8 @@ class VGG16(nn.Module):
         """
         super(VGG16, self).__init__()
         # Feature extraction Layer
-        self.features = features(n_channels, ch_num)      
-        
+        self.features = features(n_channels, ch_num)
+
         # Classifier Layer
         self.classifier = classifier(ch_num, n_classes)
 
@@ -24,7 +24,7 @@ class VGG16(nn.Module):
         Args:
             x (torch.Tensor): input data (image data 224*224)
         Returns:
-            torch.Tensor: estimated classes from input data 
+            torch.Tensor: estimated classes from input data
         """
         y = self.features(x)
         pred = self.classifier(y)
@@ -56,7 +56,7 @@ class conv_layer(nn.Module):
         x = self.conv_layer(x)
         return x
 
-    
+
 class features(nn.Module):
     """VGG16 feature extraction block"""
     def __init__(self, in_ch: int, ch_num: int):
@@ -87,7 +87,7 @@ class features(nn.Module):
             nn.MaxPool2d(kernel_size=2, stride=2),
             nn.AdaptiveAvgPool2d((1, 1)),
         )
-        
+
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """function to forward network
         Args:
@@ -97,8 +97,8 @@ class features(nn.Module):
         """
         out = self.conv(x)
         return out
-    
-    
+
+
 class classifier(nn.Module):
     """VGG16 classification block"""
     def __init__(self, ch_num: int, n_classes: int):
@@ -115,7 +115,6 @@ class classifier(nn.Module):
             nn.Dropout(),
             nn.Linear(ch_num, n_classes),
         )
-        
 
     def forward(self, z: torch.Tensor) -> torch.Tensor:
         """function to forward network
