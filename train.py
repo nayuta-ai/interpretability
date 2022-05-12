@@ -24,7 +24,8 @@ from config import parse_args, parse_yacs
 from config.const import PROJECT_ROOT, DATA_PATH, CSV_PATH
 from data.get_dataloader import get_dataloader
 
-from models.vgg16_gap import VGG16
+from models import *
+from utils import *
 
 
 def adjust_learning_rate(optimizer, lr):
@@ -125,6 +126,9 @@ def main():
     # option = parse_args()
     args = parse_yacs()
 
+    # fix random seed
+    fix_seed(args.SEED)
+
     now = str(datetime.datetime.now())
     result_dir = join(PROJECT_ROOT, "result", now)
     # arg_file = join(result_dir, "args.yaml")
@@ -169,8 +173,7 @@ def main():
             N_val = len(val_loader)
 
             # ネットワークの読み込み
-            net = VGG16(n_channels=1, n_classes=1)
-            net = torch.nn.DataParallel(net).cuda()
+            net = get_model(network=args.MODEL)
 
             # モデルの読み込み (remove)
             """

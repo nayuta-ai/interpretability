@@ -5,7 +5,11 @@ from torch import nn
 class VGG16(nn.Module):
 
     def __init__(
-            self, n_channels: int = 1, ch_num: int = 512, n_classes: int = 1):
+        self,
+        n_channels: int = 1,
+        ch_num: int = 512,
+        n_classes: int = 1
+    ) -> None:
         """
         Args:
             n_channels (int): number of input channel
@@ -14,10 +18,10 @@ class VGG16(nn.Module):
         """
         super(VGG16, self).__init__()
         # Feature extraction Layer
-        self.features = features(n_channels, ch_num)
+        self.features = Features(n_channels, ch_num)
 
         # Classifier Layer
-        self.classifier = classifier(ch_num, n_classes)
+        self.classifier = Classifier(ch_num, n_classes)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """function to forward network
@@ -27,19 +31,18 @@ class VGG16(nn.Module):
             torch.Tensor: estimated classes from input data
         """
         y = self.features(x)
-        pred = self.classifier(y)
-        return pred
+        return self.classifier(y)
 
 
-class conv_layer(nn.Module):
+class ConvLayer(nn.Module):
     """convolution layer"""
-    def __init__(self, in_ch: int, out_ch: int):
+    def __init__(self, in_ch: int, out_ch: int) -> None:
         """
         Args:
             in_ch (int): number of input channel
             out_ch (int): number of output channel
         """
-        super(conv_layer, self).__init__()
+        super(ConvLayer, self).__init__()
         self.conv_layer = nn.Sequential(
             nn.Conv2d(in_ch, out_ch, kernel_size=3, padding=1),
             nn.BatchNorm2d(out_ch),
@@ -53,37 +56,40 @@ class conv_layer(nn.Module):
         Returns:
             torch.Tensor: convolutional data
         """
-        x = self.conv_layer(x)
-        return x
+        return self.conv_layer(x)
 
 
-class features(nn.Module):
+class Features(nn.Module):
     """VGG16 feature extraction block"""
-    def __init__(self, in_ch: int, ch_num: int):
+    def __init__(self, in_ch: int, hid_ch: int = None) -> None:
         """
         Args:
             in_ch (int): number of input channel
-            ch_num (int): number of hidden layer (Attention Layer) channel
+            hid_ch (int): number of hidden layer (Attention Layer) channel
         """
-        super(features, self).__init__()
-        self.conv = nn.Sequential(
-            conv_layer(in_ch, ch_num//8),
-            conv_layer(ch_num//8, ch_num//8),
+        super(Features, self).__init__()
+        if not hid_ch:
+            ch_num = [64, 128, 256, 512]
+        else:
+            ch_num = [hid_ch//8, hid_ch//4, hid_ch//2, hid_ch]
+        self.layers = nn.Sequential(
+            ConvLayer(in_ch, ch_num[0]),
+            ConvLayer(ch_num[0], ch_num[0]),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            conv_layer(ch_num//8, ch_num//4),
-            conv_layer(ch_num//4, ch_num//4),
+            ConvLayer(ch_num[0], ch_num[1]),
+            ConvLayer(ch_num[1], ch_num[1]),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            conv_layer(ch_num//4, ch_num//2),
-            conv_layer(ch_num//2, ch_num//2),
-            conv_layer(ch_num//2, ch_num//2),
+            ConvLayer(ch_num[1], ch_num[2]),
+            ConvLayer(ch_num[2], ch_num[2]),
+            ConvLayer(ch_num[2], ch_num[2]),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            conv_layer(ch_num//2, ch_num),
-            conv_layer(ch_num, ch_num),
-            conv_layer(ch_num, ch_num),
+            ConvLayer(ch_num[2], ch_num[3]),
+            ConvLayer(ch_num[3], ch_num[3]),
+            ConvLayer(ch_num[3], ch_num[3]),
             nn.MaxPool2d(kernel_size=2, stride=2),
-            conv_layer(ch_num, ch_num),
-            conv_layer(ch_num, ch_num),
-            conv_layer(ch_num, ch_num),
+            ConvLayer(ch_num[3], ch_num[3]),
+            ConvLayer(ch_num[3], ch_num[3]),
+            ConvLayer(ch_num[3], ch_num[3]),
             nn.MaxPool2d(kernel_size=2, stride=2),
             nn.AdaptiveAvgPool2d((1, 1)),
         )
@@ -95,20 +101,19 @@ class features(nn.Module):
         Returns:
             torch.Tensor: convolutional data
         """
-        out = self.conv(x)
-        return out
+        return self.layers(x)
 
 
-class classifier(nn.Module):
+class Classifier(nn.Module):
     """VGG16 classification block"""
-    def __init__(self, ch_num: int, n_classes: int):
+    def __init__(self, ch_num: int, n_classes: int) -> None:
         """
         Args:
             ch_num (int): number of hidden layer (Attention Layer) channel
             n_classes (int): number of output class
         """
-        super(classifier, self).__init__()
-        self.FC = nn.Sequential(
+        super(Classifier, self).__init__()
+        self.fc = nn.Sequential(
             nn.Flatten(),
             nn.Linear(ch_num, ch_num),
             nn.ReLU(inplace=True),
@@ -123,5 +128,4 @@ class classifier(nn.Module):
         Returns:
             torch.Tensor: convolutional data
         """
-        pred = self.FC(z)
-        return pred
+        return self.fc(z)

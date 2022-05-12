@@ -1,13 +1,9 @@
-from os.path import join
-
 from yacs.config import CfgNode
-
-from config.const import PROJECT_ROOT
 
 
 _C = CfgNode()
 _C.SEED = 42
-
+_C.MODEL = "vgg16"
 
 # train
 _C.TRAIN = CfgNode()
@@ -22,5 +18,4 @@ _C.TRAIN.KFOLD = 5
 _C.TRAIN.WEIGHT_DECAY = 1e-4
 _C.TRAIN.EARLY_STOP = 100
 
-# 
 _C.DRAW_PROCESS = True
