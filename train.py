@@ -173,7 +173,7 @@ def main():
             N_val = len(val_loader)
 
             # ネットワークの読み込み
-            net = get_model(network=args.MODEL)
+            net = get_model(model_name=args.MODEL)
 
             # モデルの読み込み (remove)
             """
