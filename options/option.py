@@ -1,0 +1,56 @@
+import matplotlib.pyplot as plt
+import os
+
+def draw_process(learning_log, path):
+    fig = plt.figure()
+    ax1 = fig.add_subplot(1, 1, 1)
+    ax1.plot(learning_log['epoch'], learning_log['loss'], label='train_loss')
+    ax1.plot(learning_log['epoch'], learning_log['val_loss'], label='val_loss')
+    ax1.set_xlabel('epochs')
+    ax1.set_ylabel('loss')
+    ax1.legend(loc='best')
+    ax1.grid(True)
+    ax1.set_title('Loss')
+    plt.savefig(os.path.join(path, 'Loss.png'))
+    plt.close()
+
+    fig = plt.figure()
+    ax2 = fig.add_subplot(1, 1, 1)
+    ax2.plot(learning_log['epoch'], learning_log['r2'], label='train_r2')
+    ax2.plot(learning_log['epoch'], learning_log['val_r2'], label='val_r2')
+    ax2.set_xlabel('epochs')
+    ax2.set_ylabel('Acc')
+    ax2.legend(loc='best')
+    ax2.grid(True)
+    ax2.set_title('Acc')
+    plt.ylim(0, 1)
+    plt.savefig(os.path.join(path, 'Acc.png'))
+    plt.close()
+
+    
+def draw_process_acc(learning_log, path):
+    fig = plt.figure()
+    ax1 = fig.add_subplot(1, 1, 1)
+    ax1.plot(learning_log['epoch'], learning_log['loss'], label='train_loss')
+    ax1.plot(learning_log['epoch'], learning_log['val_loss'], label='val_loss')
+    ax1.set_xlabel('epochs')
+    ax1.set_ylabel('loss')
+    ax1.legend(loc='best')
+    ax1.grid(True)
+    ax1.set_title('Loss')
+    plt.savefig(os.path.join(path, 'Loss.png'))
+    plt.close()
+
+    fig = plt.figure()
+    ax2 = fig.add_subplot(1, 1, 1)
+    ax2.plot(learning_log['epoch'], learning_log['acc'], label='train_acc')
+    ax2.plot(learning_log['epoch'], learning_log['val_acc'], label='val_acc')
+    ax2.set_xlabel('epochs')
+    ax2.set_ylabel('Acc')
+    ax2.legend(loc='best')
+    ax2.grid(True)
+    ax2.set_title('Acc')
+    plt.ylim(0, 1)
+    plt.savefig(os.path.join(path, 'Acc.png'))
+    plt.close()
+
